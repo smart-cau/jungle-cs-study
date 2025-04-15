@@ -7,6 +7,8 @@
 ---
 ## 🔧 팀 공용 구글 드라이브 
 
+** 공유 하고 싶은 자료나 학습 자료가 있다면 해당 드라이브에 자유롭게 올려주시면 됩니다! **
+
 https://drive.google.com/drive/folders/1qSDo9i94E8z8dLfKgO5XyYUdFdDH9011?usp=sharing
 
 ---
@@ -45,7 +47,7 @@ https://drive.google.com/drive/folders/1qSDo9i94E8z8dLfKgO5XyYUdFdDH9011?usp=sha
 
 - 매주 하나의 대주제 선정
 - 각자 사용하는 프레임워크, 언어, 환경 등에서 **적용 사례 및 내부 동작 방식 분석**
-- 분석 및 정리한 내용은 개인 노션/깃허브 이슈에 업로드
+- 분석 및 정리한 내용은 개인 깃허브 개인 폴더에 푸시
 - 스터디 시간에는 해당 내용을 기반으로 자유 토론
 
 ---
