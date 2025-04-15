@@ -7,7 +7,7 @@
 ---
 ## 🔧 팀 공용 구글 드라이브 
 
-** 공유 하고 싶은 자료나 학습 자료가 있다면 해당 드라이브에 자유롭게 올려주시면 됩니다! **
+**공유 하고 싶은 자료나 학습 자료가 있다면 해당 드라이브에 자유롭게 올려주시면 됩니다!**
 
 https://drive.google.com/drive/folders/1qSDo9i94E8z8dLfKgO5XyYUdFdDH9011?usp=sharing
 
