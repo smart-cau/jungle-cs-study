@@ -129,7 +129,97 @@ signal(SIGTERM, my_handler)
 
 [사용자 공간] → kill(pid, SIGKILL) 호출 → [커널 공간으로 시스템 콜 진입] → 커널이 해당 PID의 프로세스 찾아서 → 프로세스에게 SIGKILL 플래그 설정 → 커널이 직접 프로세스를 강제 제거 (종료 상태로 만듦)
 
-### 정리 못하고 죽어버리는 작업의 위험성이 있을까? kill -15를 안쓰고, kill -9를 많이 쓰는 이유는?
+### 프로세스가 SIGKILL 처럼 강제 종료 되어 자원 정리(cleanup)를 못하면 실제로 어떤 시스템 위험이 발생 할 수 있는가?
 
+1. 커널 레벨 리소스는 어느 정도 정리됨.    
+열린 파일 디스크립터, 소켓, 메모리 같은 커널 리소스는 커널이 자동으로 회수한다.   
+프로세스가 죽으면 task_struct 해제 과정에서 다 정리가 된다.
 
+2. 사용자 레벨 자원은 정리되지 않는다.
 
+예를 들면,   
+
+* DB 트랜잭션 커밋/롤백
+* 파일에 버퍼가 flush 되지 않음
+* 임시 파일이 그대로 남음
+* 락 파일이 삭제되지 않음
+* 애플리케이션 레벨에서 관리하는 공유 메모리, 세마포어 남음
+→ 위의 것들은 커널이 알 수 없어 자동으로 정리가 되지 않음
+
+3. 결과적으로   
+
+* 파일 데이터 유실 위험(flush 안됨)
+* 락 걸린 채 죽어서 다른 프로세스 무한 대기
+* 공유 메모리/세마포어가 남아있어 리소스 고갈
+* 소켓이 close 되지 않아 TIME_WAIT 상태 쌓임 → 포트 부족
+* DB 트랜잭션이 비정상 종료 → 데이터 손상 가능성
+
+즉, 프로세스가 정상 종료되지 않으면, application layer에서 문제가 남는다.
+
+1. kill -15 <pid>        # 정상 종료 요청
+2. (조금 기다리기)
+3. kill -9 <pid>         # 그래도 안 죽으면 강제 종료
+
+실제 리눅스 표준 운영 가이드라인들도 위의 과정으로 종료시킬 것을 권장하고 있다.
+
+> TimeoutStartFailureMode=, TimeoutStopFailureMode=
+> These options configure the action that is taken in case a
+> daemon service does not signal start-up within its configured
+> TimeoutStartSec=, respectively if it does not stop within
+> TimeoutStopSec=. Takes one of terminate, abort and kill. Both
+> options default to terminate.
+>
+> If terminate is set the service will be gracefully terminated
+> by sending the signal specified in KillSignal= (defaults to
+> SIGTERM, see systemd.kill(5)). If the service does not
+> terminate the FinalKillSignal= is sent after TimeoutStopSec=.
+> If abort is set, WatchdogSignal= is sent instead and
+> TimeoutAbortSec= applies before sending FinalKillSignal=. This
+> setting may be used to analyze services that fail to start-up
+> or shut-down intermittently. By using kill the service is
+> immediately terminated by sending FinalKillSignal= without any
+> further timeout. This setting can be used to expedite the
+> shutdown of failing services.
+>
+> Added in version 246.
+
+TimeoutStartFailureMode=, TimeoutStopFailureMode=는 데몬 서비스가 설정된 TimeoutStartSec= 내에 시작 신호를 보내지 못하거나, TimeoutStopSec= 내에 정상적으로 종료하지 못했을 경우 어떤 조치를 취할지를 설정하는 옵션입니다. 이 옵션은 terminate, abort, kill 중 하나를 선택할 수 있으며, **기본값은 terminate입니다.**
+
+**terminate로 설정되어 있는 경우, KillSignal= (기본값은 SIGTERM, 자세한 내용은 systemd.kill(5) 참조)로 지정된 시그널을 보내 정상 종료를 시도합니다. 만약 서비스가 여전히 종료되지 않는다면 TimeoutStopSec= 이후 FinalKillSignal=을 보내 강제 종료합니다.**
+
+abort로 설정된 경우에는 KillSignal 대신 WatchdogSignal=을 보내며, 이후 TimeoutAbortSec= 동안 대기한 후 FinalKillSignal=을 전송합니다. 이 설정은 서비스가 간헐적으로 시작이나 종료에 실패하는 문제를 분석하는 데 사용할 수 있습니다.
+
+kill로 설정된 경우에는 추가 대기 없이 즉시 FinalKillSignal=을 전송하여 서비스를 강제 종료합니다. 이 설정은 장애가 발생한 서비스를 빠르게 종료할 때 사용할 수 있습니다.
+
+이 기능은 systemd 버전 246에서 추가되었습니다.
+
+[참고 링크] https://man7.org/linux/man-pages/man5/systemd.service.5.html
+
+위에서 본 것처럼, 공식 문서에서도 기본 종료 값은 SIGTERM이며, 이렇게 해서도 종료되지 않는다면 강제 종료한다고 나와있다.
+
+블로그에 나와있는 해결 방법에도 항상 의문을 가질 필요가 있는 것 같다. 
+왜 kill -9 일까? 라는 의문을 던지지 않았다면 몰랐을 것 같다.
+
+----
+# 여기서부터는 추가 자료(발표 x)
+
+### 부모 프로세스 vs 마스터 프로세스
+
+gunicorn 으로 dash 앱을 배포하면서, workers를 4로 설정해두고 배포했다.
+그러고 프로세스를 죽여야 할 일이 있어 PID를 조회하니, 분명 4로 설정해두었으니 네개의 프로세스가 떠야 맞는데, 다섯개의 PID가 조회되었다.
+
+알아보니 gunicorn에서는 **마스터 프로세스** 라는 개념이 존재했다.
+
+> gunicorn의 프로세스는 프로세스 기반의 처리 방식을 채택하고 있으며, 이는 내부적으로 크게 master process와 worker process로 나뉘어진다. 
+> gunicorn이 실행되면, 그 프로세스 자체가 master process이며, fork를 사용해 설정에 부여된 worker 수대로 worker process가 생성된다. 
+> master process는 worker process를 관리하는 역할을 하고, worker process는 웹 어플리케이션을 임포트하며, 요청을 받아 웹 어플리케이션 코드로 전달하여 처리하도록 하는 역할을 한다.
+
+마스터 프로세스를 kill 하면 자식 프로세스까지 다같이 종료되는 것을 확인 할 수 있었다.
+
+왜 그런건진 시간 관계상;;
+
+### gunicorn? WSGI?
+
+gunicorn은 WSGI(Web Server Gateway Interface) 서버이다.  
+ 
+WSGI란 python으로 작성된 웹 어플리케이션과 python으로 작성된 서버 사이의 약속된 인터페이스 또는 규칙이다. 간단히 말하면 WSGI 서버와 웹 어플리케이션이 WSGI의 규칙에 따라 작성되면, 웹 어플리케이션 입장에서는 내부 구현과 상관 없이 자유롭게 WSGI 서버를 골라서 사용 할 수 있는 유연성을 제공한다.
