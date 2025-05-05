@@ -23,7 +23,7 @@ JPQL로 작성한 위 쿼리는 여러 트랜잭션이 동시에 `incrementCheer
 
 Lock이란, 여러 실행흐름(threads, transactions)이 하나의 공유자원을 사용할 때 생길 수 있는 문제를 방지하기 위한 방법 중 하나입니다. Lock을 설명할 때 가장 많이 쓰이는 비유는 좀 비위 상하는 거긴 하지만 ‘화장실’ 예시입니다. 배가 아픈 여러 사람(thread, transaction)이 하나의 변기칸(공유자원)을 공유해야 한다고 생각해봅시다. 만약 화장실 문의 잠금장치(Lock)가 작동하지 않는다면, 한 사람이 큰 일을 치루고 있는데 더 급한 사람이 볼 일 보고 있는 사람의 위에 배출을 하는 대참사가 발생할 수 있을 것입니다… 잠금장치(Lock)이라는 안전장치가 있기에 한 번에 한명 씩, 안전함을 느끼며 편히 볼 일을 볼 수 있는거죠.
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/0069ef81-efeb-4c05-be82-e9b669cc1aef" width="320">
+  <img src="eye-on-cheer.gif" width="320">
   </p>
 
   ## PostgreSQL의 UPDATE 문
