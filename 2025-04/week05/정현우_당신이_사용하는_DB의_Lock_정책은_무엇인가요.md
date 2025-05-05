@@ -96,13 +96,6 @@ Table Lock은 마치 "화장실 전체를 폐쇄했다"는 팻말을 걸어놓�
     UPDATE protest_cheer_count SET status = 'VERIFIED'
     WHERE id IN (SELECT id FROM protest_cheer_count WHERE status != 'VERIFIED' LIMIT 1000);
     ```
-    
-3. **FOR UPDATE 절 활용**: 명시적으로 row-level lock을 지정할 수 있습니다.
-    
-    ```sql
-    SELECT * FROM protest_cheer_count WHERE protest_id = 1 FOR UPDATE;
-    ```
-    
 
 ## MySQL에서의 UPDATE 문
 
@@ -135,7 +128,7 @@ protest_id가 10~20 사이인 행들에 Lock을 걸고, 추가로 10 미만의 �
 
 특히 PostgreSQL과 MySQL은 같은 SQL 문법을 사용하더라도 내부적으로 다른 Lock 정책을 적용하기 때문에, DB를 변경하는 과정에서 예상치 못한 동시성 문제가 발생할 수 있습니다.
 
-결국, 좋은 백엔드 개발자가 되기 위해서는:
+결국, 성능을 고려하는 개발자가 되기 위해서는:
 
 1. 자신이 사용하는 DB의 Lock 정책 기본 원리를 이해하세요.
 2. 성능 중요 쿼리의 실행 계획(EXPLAIN)을 확인하는 습관을 들이세요.
