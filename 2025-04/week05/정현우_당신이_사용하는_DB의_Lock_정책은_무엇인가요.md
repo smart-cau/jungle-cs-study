@@ -3,10 +3,9 @@
   오늘 주제는 바로 “Lock” 입니다! 이번에는 Lock과 관련된 개념 주제를 선정하는데 정말로 애를 먹었습니다… Java에서 Lock을 사용하는 다양한 방식과 장단점에 대해서 설명할까, 아니면 Transaction의 ACID 속성에서 Isolation(격리성)의 다양한 수준과 해당 수준이 보장되는 DB별 방법에 대해서 설명할까 등… 이런 주제들에 대해 고민했지만 이 녀석들에 대해 쓰려니 내용도 넘 어렵고 글도 길어져 대신 뭘 할까 참 많은 고민을 했습니다…
 
   고민해보니 역시 주제는 내가 직접 경험해본게 좋겠다 싶어 제가 개발한 [주변시위 Now] 서비스의 ‘시위 응원하기’을 떠올렸습니다.
-  <p align="center">
-  <img src="https://github.com/user-attachments/assets/2cfd320f-67ee-4e20-8f40-b67894e95dd8" width="320">
+<p align="center">
+  <img src="eye-on-cheer.gif" width="320">
   </p>
-
   시위 응원하기 기능은 아주 단순합니다. 응원하고 싶은 시위 id에 따라, 해당 id의 cheerCount라는 값을 1씩 올려줍니다.
 
 ```java
@@ -22,9 +21,7 @@ JPQL로 작성한 위 쿼리는 여러 트랜잭션이 동시에 `incrementCheer
 ## Lock이란?
 
 Lock이란, 여러 실행흐름(threads, transactions)이 하나의 공유자원을 사용할 때 생길 수 있는 문제를 방지하기 위한 방법 중 하나입니다. Lock을 설명할 때 가장 많이 쓰이는 비유는 좀 비위 상하는 거긴 하지만 ‘화장실’ 예시입니다. 배가 아픈 여러 사람(thread, transaction)이 하나의 변기칸(공유자원)을 공유해야 한다고 생각해봅시다. 만약 화장실 문의 잠금장치(Lock)가 작동하지 않는다면, 한 사람이 큰 일을 치루고 있는데 더 급한 사람이 볼 일 보고 있는 사람의 위에 배출을 하는 대참사가 발생할 수 있을 것입니다… 잠금장치(Lock)이라는 안전장치가 있기에 한 번에 한명 씩, 안전함을 느끼며 편히 볼 일을 볼 수 있는거죠.
-<p align="center">
-  <img src="eye-on-cheer.gif" width="320">
-  </p>
+
 
   ## PostgreSQL의 UPDATE 문
 
