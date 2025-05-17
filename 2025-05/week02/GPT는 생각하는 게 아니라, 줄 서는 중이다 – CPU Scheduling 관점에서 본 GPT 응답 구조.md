@@ -59,6 +59,15 @@ GPT의 실제 요청 처리 방식은 공개되어 있지 않지만, 현재 사�
 
 GPT의 응답 처리 흐름은 OpenAI에서 공개된 구조는 아니지만, Ray Serve, NVIDIA Triton, TensorFlow Serving과 같은 대표적인 AI 서빙 시스템의 구조와 높은 유사성을 보인다. 특히 Request Queue → Priority Queue → Batch Scheduling → GPU Execution이라는 기본 처리 흐름은 여러 시스템에서 동일하게 반복되는 패턴이다. 
 
+**\[ AI 모델 서빙 시스템에 공통적으로 나타나는 스케줄링 구조 \]**
+
+| ****시스템**** | **Request Queue** | **Priority 적용** | **Batch 구성** | **GPU 분산 방식** |
+| --- | --- | --- | --- | --- |
+| Ray Serve | ✅ | ✅ (Custom policy 기반) | ✅ (@serve.batch 등) | ✅ Replica (Actor 단위 수평 분산) |
+| Triton | ✅ | ✅ (Model Priority 설정 가능) | ✅ (dynamic\_batching) | ✅ Backend Instance Pool 기반 |
+| TF Serving | ✅ | ❌ (요청 단위 Priority 없음) | ✅ (BatchingParameters) | ✅ 단일 모델에 할당, 버전 교체 방식 (AspiredPolicy) |
+
+
 > **📌 Batch Inference란?**  
 > 여러 개의 요청을 하나로 묶어 GPU에서 동시에 처리하는 방식이다. 같은 길이의 요청끼리 묶으면 연산 효율이 올라가고, 전체 응답 시간이 줄어든다. GPT는 이 구조를 통해 비용을 줄이고 성능을 높인다. 이때 요청을 묶는 기준은 요청 길이, 모델 예상 토큰 수 등이다. 
 
